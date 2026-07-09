@@ -1,86 +1,97 @@
-package main
+package telegram
 
 import (
-	"bufio"
 	"context"
-	"encoding/hex"
+	"errors"
 	"fmt"
 	"os"
-	"strconv"
-	"strings"
-	"time"
 
+	"github.com/artymka/jobparser-producer/internal/config"
 	"github.com/gotd/td/session"
 	"github.com/gotd/td/telegram"
-	"github.com/gotd/td/telegram/auth"
+	"github.com/gotd/td/telegram/auth/qrlogin"
 	"github.com/gotd/td/telegram/dcs"
 	"github.com/gotd/td/tg"
-	"github.com/joho/godotenv"
+	"github.com/mdp/qrterminal/v3"
 )
 
-func main() {
+func GetLastMessages(config *config.Config) []string {
 	// load config
-	godotenv.Load()
-	phone := os.Getenv("PHONE")
-	if phone == "" {
-		panic("No phone number")
-	}
-	appID, err := strconv.Atoi(os.Getenv("APP_ID"))
-	if err != nil {
-		panic(fmt.Errorf("wrong app_id: %w", err))
-	}
-	appHash := os.Getenv("APP_HASH")
-	if appHash == "" {
-		panic("No app_hash")
-	}
+	// godotenv.Load()
+	// phone := os.Getenv("PHONE")
+	// if phone == "" {
+	// 	panic("No phone number")
+	// }
+	// appID, err := strconv.Atoi(os.Getenv("APP_ID"))
+	// if err != nil {
+	// 	panic(fmt.Errorf("wrong app_id: %w", err))
+	// }
+	// appHash := os.Getenv("APP_HASH")
+	// if appHash == "" {
+	// 	panic("No app_hash")
+	// }
 
-	proxyAddr := os.Getenv("PROXY_ADDR")
-	if proxyAddr == "" {
-		panic("No proxy addres")
-	}
-	proxySecretHex := os.Getenv("PROXY_SECRET")
-	if proxySecretHex == "" {
-		panic("No proxy secret")
-	}
-	proxySecret, err := hex.DecodeString(proxySecretHex)
-	if err != nil {
-		panic(fmt.Errorf("hex: %w", err))
-	}
+	// proxyAddr := os.Getenv("PROXY_ADDR")
+	// if proxyAddr == "" {
+	// 	panic("No proxy addres")
+	// }
+	// proxySecretHex := os.Getenv("PROXY_SECRET")
+	// if proxySecretHex == "" {
+	// 	panic("No proxy secret")
+	// }
+	// proxySecret, err := hex.DecodeString(proxySecretHex)
+	// if err != nil {
+	// 	panic(fmt.Errorf("hex: %w", err))
+	// }
 
 	// resolver, err := dcs.MTProxy(proxyAddr, []byte(proxySecret), dcs.MTProxyOptions{})
-	resolver, err := dcs.MTProxy(proxyAddr, proxySecret, dcs.MTProxyOptions{})
+	resolver, err := dcs.MTProxy(config.ProxyAddr, config.ProxySecret, dcs.MTProxyOptions{})
 	if err != nil {
 		panic(fmt.Errorf("cannot use proxy: %w", err))
 	}
 	// fmt.Println(resolver)
 
-	client := telegram.NewClient(appID, appHash, telegram.Options{
-		SessionStorage: &session.FileStorage{Path: "session.json"},
+	dispatcher := tg.NewUpdateDispatcher()
+	loggedIn := qrlogin.OnLoginToken(&dispatcher)
+	client := telegram.NewClient(config.AppID, config.AppHash, telegram.Options{
+		SessionStorage: &session.FileStorage{Path: config.SessionPath},
 		Resolver:       resolver,
 	})
 
-	codePrompt := func(ctx context.Context, sentCode *tg.AuthSentCode) (string, error) {
-		fmt.Print("Enter code: ")
-		scanner := bufio.NewScanner(os.Stdin)
-		if !scanner.Scan() {
-			return "", scanner.Err()
-		}
-		return strings.TrimSpace(scanner.Text()), nil
-	}
+	// codePrompt := func(ctx context.Context, sentCode *tg.AuthSentCode) (string, error) {
+	// 	fmt.Print("Enter code: ")
+	// 	scanner := bufio.NewScanner(os.Stdin)
+	// 	if !scanner.Scan() {
+	// 		return "", scanner.Err()
+	// 	}
+	// 	return strings.TrimSpace(scanner.Text()), nil
+	// }
+
+	res := make([]string, 0)
 
 	// ВАЖНО: используем client.Run() для запуска клиента
 	if err := client.Run(context.Background(), func(ctx context.Context) error {
 		// Теперь запускаем аутентификацию внутри клиента
-		flow := auth.NewFlow(
-			auth.CodeOnly(phone, auth.CodeAuthenticatorFunc(codePrompt)),
-			auth.SendCodeOptions{},
-		)
-		if err := client.Auth().IfNecessary(ctx, flow); err != nil {
-			return err
-		}
+		// flow := auth.NewFlow(
+		// 	auth.CodeOnly(phone, auth.CodeAuthenticatorFunc(codePrompt)),
+		// 	auth.SendCodeOptions{},
+		// )
+		// if err := client.Auth().IfNecessary(ctx, flow); err != nil {
+		// 	return err
+		// }
 		// if err := flow.Run(ctx, client.Auth()); err != nil {
 		// 	return err
 		// }
+		if _, err := os.Stat(config.SessionPath); errors.Is(err, os.ErrNotExist) {
+			show := func(ctx context.Context, token qrlogin.Token) error {
+				qrterminal.Generate(token.URL(), qrterminal.L, os.Stderr)
+				return nil
+			}
+
+			if _, err := client.QR().Auth(ctx, loggedIn, show); err != nil {
+				return err
+			}
+		}
 
 		fmt.Println("Authentication successful!")
 
@@ -92,33 +103,6 @@ func main() {
 			return err
 		}
 		fmt.Printf("Logged in as: %s\n", user.FirstName)
-
-		// dialogs, err := query.GetDialogs(api).Collect(ctx)
-		// if err != nil {
-		// 	return fmt.Errorf("failed to get dialogs with query: %w", err)
-		// }
-		// // fmt.Println(dialogs)
-
-		// i := 0
-		// for _, dialog := range dialogs {
-		// 	messages, err := query.Messages(api).GetHistory().Collect(ctx)
-		// 	if err != nil {
-		// 		return fmt.Errorf("failed to get history: %w", err)
-		// 	}
-
-		// 	// Обрабатываем сообщения
-		// 	for _, msg := range messages {
-		// 		if m, ok := msg.(*tg.Message); ok {
-		// 			fmt.Printf("[%s] %s\n",
-		// 				time.Unix(int64(m.Date), 0).Format("2006-01-02 15:04:05"),
-		// 				m.Message)
-		// 		}
-		// 	}
-		// }
-
-		// допиши логику получения сообщений здесь
-
-		// допиши логику получения сообщений здесь
 
 		// 1. Получаем список диалогов (чатов, каналов, групп)
 		dialogs, err := api.MessagesGetDialogs(ctx, &tg.MessagesGetDialogsRequest{
@@ -161,7 +145,9 @@ func main() {
 			return fmt.Errorf("failed to get dialogs slice")
 		}
 
-		fmt.Println("\n=== Channels and their last messages ===\n")
+		fmt.Println()
+		fmt.Println("=== Channels and their last messages ===")
+		fmt.Println()
 
 		// Создаем карту для быстрого доступа к чатам по ID
 		chatsMap := make(map[int64]tg.ChatClass)
@@ -230,8 +216,7 @@ func main() {
 
 				// Извлекаем сообщения из ответа
 				var msgText string
-				var msgDate time.Time
-
+				// var msgDate time.Time
 				switch msgs := messages.(type) {
 				case *tg.MessagesChannelMessages:
 					if len(msgs.Messages) > 0 {
@@ -241,30 +226,30 @@ func main() {
 						case *tg.Message:
 							if m.Message != "" {
 								msgText = m.Message
-							} else if m.Media != nil {
-								// Пытаемся определить тип медиа
-								switch m.Media.(type) {
-								case *tg.MessageMediaPhoto:
-									msgText = "[Photo]"
-								case *tg.MessageMediaDocument:
-									msgText = "[Document]"
-								case *tg.MessageMediaGeo:
-									msgText = "[Location]"
-								case *tg.MessageMediaContact:
-									msgText = "[Contact]"
-								case *tg.MessageMediaVenue:
-									msgText = "[Venue]"
-								case *tg.MessageMediaGame:
-									msgText = "[Game]"
-								case *tg.MessageMediaInvoice:
-									msgText = "[Invoice]"
-								default:
-									msgText = "[Media content]"
-								}
+								// } else if m.Media != nil {
+								// 	// Пытаемся определить тип медиа
+								// 	switch m.Media.(type) {
+								// 	case *tg.MessageMediaPhoto:
+								// 		msgText = "[Photo]"
+								// 	case *tg.MessageMediaDocument:
+								// 		msgText = "[Document]"
+								// 	case *tg.MessageMediaGeo:
+								// 		msgText = "[Location]"
+								// 	case *tg.MessageMediaContact:
+								// 		msgText = "[Contact]"
+								// 	case *tg.MessageMediaVenue:
+								// 		msgText = "[Venue]"
+								// 	case *tg.MessageMediaGame:
+								// 		msgText = "[Game]"
+								// 	case *tg.MessageMediaInvoice:
+								// 		msgText = "[Invoice]"
+								// 	default:
+								// 		msgText = "[Media content]"
+								// 	}
 							} else {
 								msgText = "[Empty message]"
 							}
-							msgDate = time.Unix(int64(m.Date), 0)
+							// msgDate = time.Unix(int64(m.Date), 0)
 						default:
 							msgText = "[Unsupported message type]"
 						}
@@ -281,7 +266,7 @@ func main() {
 							} else {
 								msgText = "[Empty message]"
 							}
-							msgDate = time.Unix(int64(m.Date), 0)
+							// msgDate = time.Unix(int64(m.Date), 0)
 						default:
 							msgText = "[Unsupported message type]"
 						}
@@ -298,7 +283,7 @@ func main() {
 							} else {
 								msgText = "[Empty message]"
 							}
-							msgDate = time.Unix(int64(m.Date), 0)
+							// msgDate = time.Unix(int64(m.Date), 0)
 						default:
 							msgText = "[Unsupported message type]"
 						}
@@ -310,13 +295,14 @@ func main() {
 				}
 
 				// Выводим информацию о канале и последнем сообщении
-				fmt.Printf("Channel #%d: %s\n", channelCounter, channel.Title)
-				if channel.Username != "" {
-					fmt.Printf("  Username: @%s\n", channel.Username)
-				}
-				fmt.Printf("  Last message date: %s\n", msgDate.Format("2006-01-02 15:04:05"))
-				fmt.Printf("  Last message: %s\n", msgText)
-				fmt.Println(strings.Repeat("-", 60))
+				res = append(res, msgText)
+				// fmt.Printf("Channel #%d: %s\n", channelCounter, channel.Title)
+				// if channel.Username != "" {
+				// 	fmt.Printf("  Username: @%s\n", channel.Username)
+				// }
+				// fmt.Printf("  Last message date: %s\n", msgDate.Format("2006-01-02 15:04:05"))
+				// fmt.Printf("  Last message: %s\n", msgText)
+				// fmt.Println(strings.Repeat("-", 60))
 
 			case *tg.PeerChat:
 				// Это обычный чат/группа, пропускаем
@@ -333,69 +319,13 @@ func main() {
 			fmt.Println("No channels found in your dialogs")
 		}
 
-		fmt.Println("=== End of channel messages ===\n")
+		fmt.Println("=== End of channel messages ===")
+		fmt.Println()
 
 		return nil
 	}); err != nil {
 		panic(err)
 	}
+
+	return res
 }
-
-// func getFullChannelHistory(ctx context.Context, api *tg.Client, channel *tg.Channel, limit int) error {
-// 	peer := &tg.InputPeerChannel{
-// 		ChannelID:  channel.ID,
-// 		AccessHash: channel.AccessHash,
-// 	}
-
-// 	var allMessages []tg.MessageClass
-// 	lastMessageID := 0
-
-// 	for len(allMessages) < limit {
-// 		// Загружаем порцию сообщений
-// 		messages, err := api.MessagesGetHistory(ctx, &tg.MessagesGetHistoryRequest{
-// 			Peer:       peer,
-// 			Limit:      100, // Максимум 100 за запрос
-// 			OffsetID:   lastMessageID,
-// 			OffsetDate: 0,
-// 			AddOffset:  0,
-// 			MaxID:      0,
-// 			MinID:      0,
-// 			Hash:       0,
-// 		})
-// 		if err != nil {
-// 			return fmt.Errorf("failed to get history: %w", err)
-// 		}
-
-// 		var msgs []tg.MessageClass
-// 		switch m := messages.(type) {
-// 		case *tg.MessagesChannelMessages:
-// 			msgs = m.Messages
-// 		case *tg.MessagesMessages:
-// 			msgs = m.Messages
-// 		case *tg.MessagesMessagesSlice:
-// 			msgs = m.Messages
-// 		}
-
-// 		if len(msgs) == 0 {
-// 			break // Больше нет сообщений
-// 		}
-
-// 		// Обновляем ID последнего сообщения для следующего запроса
-// 		lastMessageID = msgs[len(msgs)-1].GetID()
-
-// 		// Добавляем сообщения в общий список
-// 		allMessages = append(allMessages, msgs...)
-
-// 		// Если получено меньше 100, это последняя порция
-// 		if len(msgs) < 100 {
-// 			break
-// 		}
-
-// 		// Небольшая пауза, чтобы не превысить лимиты API
-// 		time.Sleep(500 * time.Millisecond)
-// 	}
-
-// 	// Обрабатываем allMessages
-// 	fmt.Printf("Всего получено сообщений: %d\n", len(allMessages))
-// 	return nil
-// }

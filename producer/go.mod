@@ -1,10 +1,12 @@
-module github.com/artymka/jobparser
+module github.com/artymka/jobparser-producer
 
 go 1.25.1
 
 require (
 	github.com/gotd/td v0.159.0
 	github.com/joho/godotenv v1.5.1
+	github.com/mdp/qrterminal/v3 v3.2.1
+	github.com/segmentio/kafka-go v0.4.51
 )
 
 require (
@@ -27,6 +29,7 @@ require (
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.22 // indirect
 	github.com/ogen-go/ogen v1.22.0 // indirect
+	github.com/pierrec/lz4/v4 v4.1.15 // indirect
 	github.com/refraction-networking/utls v1.8.2 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
@@ -43,6 +46,7 @@ require (
 	golang.org/x/net v0.56.0 // indirect
 	golang.org/x/sync v0.21.0 // indirect
 	golang.org/x/sys v0.46.0 // indirect
+	golang.org/x/term v0.44.0 // indirect
 	golang.org/x/text v0.38.0 // indirect
 	golang.org/x/tools v0.46.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
