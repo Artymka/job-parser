@@ -59,7 +59,7 @@ services:
 
   consumer:
     build: 
-      context: ./consumer
+      context: ./consumers/classifier
     container_name: consumer
     depends_on:
         kafka:
