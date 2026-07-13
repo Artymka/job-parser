@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/artymka/jobparser-consumer-classifier/internal/config"
+	"github.com/artymka/jobparser/services/classifier/internal/config"
 )
 
 func TestPrompt(t *testing.T) {

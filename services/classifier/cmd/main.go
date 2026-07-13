@@ -8,9 +8,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/artymka/jobparser-consumer-classifier/internal/config"
-	"github.com/artymka/jobparser-consumer-classifier/internal/kafka"
-	"github.com/artymka/jobparser-consumer-classifier/internal/openai"
+	"github.com/artymka/jobparser/internal/kafka/consumer"
+	"github.com/artymka/jobparser/services/classifier/internal/config"
+	"github.com/artymka/jobparser/services/classifier/internal/openai"
 )
 
 func main() {
@@ -22,7 +22,7 @@ func main() {
 		panic(err)
 	}
 
-	consumer := kafka.NewConsumer()
+	consumer := consumer.NewConsumer(config.KafkaBroker)
 	defer consumer.Close()
 
 	ticker := time.NewTicker(2 * time.Second)

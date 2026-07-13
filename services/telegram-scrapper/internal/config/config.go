@@ -16,6 +16,7 @@ type Config struct {
 	ProxyAddr   string
 	ProxySecret []byte
 	SessionPath string
+	KafkaBroker string
 }
 
 func New(envFileName string) (*Config, error) {
@@ -53,6 +54,10 @@ func New(envFileName string) (*Config, error) {
 	config.SessionPath = os.Getenv("SESSION_PATH")
 	if config.SessionPath == "" {
 		return nil, fmt.Errorf("No SESSION_PATH")
+	}
+	config.KafkaBroker = os.Getenv("KAFKA_BROKER")
+	if config.KafkaBroker == "" {
+		return nil, fmt.Errorf("No KAFKA_BROKER")
 	}
 
 	return &config, nil

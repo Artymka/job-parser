@@ -115,7 +115,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/artymka/jobparser-consumer-classifier/internal/config"
+	"github.com/artymka/jobparser/services/classifier/internal/config"
 )
 
 type Client struct {

@@ -44,23 +44,25 @@ services:
       timeout: 10s
       retries: 10
 
-  producer:
+  telegram-scrapper:
     build: 
-      context: ./producer
-    container_name: producer
+      context: .
+      dockerfile: services/telegram-scrapper/Dockerfile
+    container_name: telegram-scrapper
     depends_on:
       kafka:
         condition: service_healthy
     environment:
       KAFKA_BROKER: kafka:9092
     volumes:
-      - ./producer/sessions/:/app/sessions
+      - ./services/telegram-scrapper/config/sessions/:/app/sessions
     restart: unless-stopped
 
-  consumer:
+  classifier:
     build: 
-      context: ./consumers/classifier
-    container_name: consumer
+      context: .
+      dockerfile: services/classifier/Dockerfile
+    container_name: classifier
     depends_on:
         kafka:
           condition: service_healthy

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/artymka/jobparser-producer/internal/config"
 	"github.com/gotd/td/session"
 	"github.com/gotd/td/telegram"
 	"github.com/gotd/td/telegram/auth/qrlogin"
@@ -15,7 +14,16 @@ import (
 	"github.com/mdp/qrterminal/v3"
 )
 
-func GetLastMessages(config *config.Config) []string {
+type TelegramConfig struct {
+	Phone       string
+	AppID       int
+	AppHash     string
+	ProxyAddr   string
+	ProxySecret []byte
+	SessionPath string
+}
+
+func GetLastMessages(config *TelegramConfig) []string {
 	// load config
 	// godotenv.Load()
 	// phone := os.Getenv("PHONE")

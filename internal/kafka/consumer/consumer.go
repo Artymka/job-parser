@@ -1,11 +1,9 @@
-package kafka
+package consumer
 
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
-	"os"
 	"strings"
 
 	"github.com/segmentio/kafka-go"
@@ -15,15 +13,15 @@ type Consumer struct {
 	reader *kafka.Reader
 }
 
-func NewConsumer() *Consumer {
+func NewConsumer(kafkaBroker string) *Consumer {
 	// подключение к kafka
-	broker := os.Getenv("KAFKA_BROKER")
-	if broker == "" {
-		panic(fmt.Errorf("no KAFKA_BROKER"))
-	}
+	// broker := os.Getenv("KAFKA_BROKER")
+	// if broker == "" {
+	// 	panic(fmt.Errorf("no KAFKA_BROKER"))
+	// }
 
 	reader := kafka.NewReader(kafka.ReaderConfig{
-		Brokers:     []string{broker},
+		Brokers:     []string{kafkaBroker},
 		Topic:       "messages",
 		Partition:   0,
 		StartOffset: kafka.FirstOffset,

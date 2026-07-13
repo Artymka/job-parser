@@ -1,9 +1,7 @@
-package kafka
+package producer
 
 import (
 	"context"
-	"fmt"
-	"os"
 	"time"
 
 	"github.com/segmentio/kafka-go"
@@ -13,14 +11,14 @@ type Producer struct {
 	writer *kafka.Writer
 }
 
-func NewProducer() *Producer {
-	broker := os.Getenv("KAFKA_BROKER")
-	if broker == "" {
-		panic(fmt.Errorf("no KAFKA_BROKER"))
-	}
+func NewProducer(kafkaBroker string) *Producer {
+	// broker := os.Getenv("KAFKA_BROKER")
+	// if broker == "" {
+	// 	panic(fmt.Errorf("no KAFKA_BROKER"))
+	// }
 
 	writer := kafka.Writer{
-		Addr:  kafka.TCP(broker),
+		Addr:  kafka.TCP(kafkaBroker),
 		Topic: "messages",
 		// как балансируются сообщения по партициям
 		Balancer:               &kafka.LeastBytes{},
