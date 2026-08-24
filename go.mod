@@ -5,6 +5,7 @@ go 1.25.1
 require (
 	github.com/gotd/td v0.159.0
 	github.com/joho/godotenv v1.5.1
+	github.com/lib/pq v1.12.3
 	github.com/mdp/qrterminal/v3 v3.2.1
 	github.com/segmentio/kafka-go v0.4.51
 )

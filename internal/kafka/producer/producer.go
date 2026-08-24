@@ -45,22 +45,22 @@ func (p *Producer) Produce(msg string) {
 	}
 }
 
-func (p *Producer) ProduceN(msgs []string) {
+func (p *Producer) ProduceN(msgs [][]byte) error {
 	kafkaMsgs := make([]kafka.Message, len(msgs))
 	for i, msg := range msgs {
 		kafkaMsgs[i] = kafka.Message{
-			Value: []byte(msg),
+			Value: msg,
 		}
 	}
 
 	// отправка сообщений
 	err := p.writer.WriteMessages(context.TODO(), kafkaMsgs...)
-
 	if err != nil {
-		panic(err)
+		return err
 	}
+	return nil
 }
 
-func (p *Producer) Close() {
-	p.writer.Close()
+func (p *Producer) Close() error {
+	return p.writer.Close()
 }

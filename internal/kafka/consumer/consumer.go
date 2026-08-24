@@ -33,8 +33,8 @@ func NewConsumer(kafkaBroker string) *Consumer {
 	return &consumer
 }
 
-func (c *Consumer) Close() {
-	c.reader.Close()
+func (c *Consumer) Close() error {
+	return c.reader.Close()
 }
 
 func (c *Consumer) Consume(ctx context.Context) (string, error) {

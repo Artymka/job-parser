@@ -1,22 +1,25 @@
 package config
 
 import (
-	"encoding/hex"
 	"fmt"
 	"os"
-	"strconv"
 
+	tgconf "github.com/artymka/jobparser/internal/telegram/config"
 	"github.com/joho/godotenv"
 )
 
+type PostgresConfig struct {
+	DBName   string
+	User     string
+	Password string
+	SSLMode  string
+}
+
 type Config struct {
-	Phone       string
-	AppID       int
-	AppHash     string
-	ProxyAddr   string
-	ProxySecret []byte
-	SessionPath string
+	TgConfig    tgconf.Config
+	PgConfig    PostgresConfig
 	KafkaBroker string
+	PostgresDB  string
 }
 
 func New(envFileName string) (*Config, error) {
@@ -27,34 +30,55 @@ func New(envFileName string) (*Config, error) {
 	config := Config{}
 	var err error
 
-	config.Phone = os.Getenv("PHONE")
-	if config.Phone == "" {
-		return nil, fmt.Errorf("No phone number")
-	}
-	config.AppID, err = strconv.Atoi(os.Getenv("APP_ID"))
+	// config.Phone = os.Getenv("PHONE")
+	// if config.Phone == "" {
+	// 	return nil, fmt.Errorf("No phone number")
+	// }
+	// config.AppID, err = strconv.Atoi(os.Getenv("APP_ID"))
+	// if err != nil {
+	// 	return nil, fmt.Errorf("wrong app_id: %w", err)
+	// }
+	// config.AppHash = os.Getenv("APP_HASH")
+	// if config.AppHash == "" {
+	// 	return nil, fmt.Errorf("No app_hash")
+	// }
+	// config.ProxyAddr = os.Getenv("PROXY_ADDR")
+	// if config.ProxyAddr == "" {
+	// 	return nil, fmt.Errorf("No proxy addres")
+	// }
+	// proxySecretHex := os.Getenv("PROXY_SECRET")
+	// if proxySecretHex == "" {
+	// 	return nil, fmt.Errorf("No proxy secret")
+	// }
+	// config.ProxySecret, err = hex.DecodeString(proxySecretHex)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("hex: %w", err)
+	// }
+	// config.SessionPath = os.Getenv("SESSION_PATH")
+	// if config.SessionPath == "" {
+	// 	return nil, fmt.Errorf("No SESSION_PATH")
+	// }
+
+	tgConfig, err := tgconf.New(envFileName)
 	if err != nil {
-		return nil, fmt.Errorf("wrong app_id: %w", err)
+		return nil, err
 	}
-	config.AppHash = os.Getenv("APP_HASH")
-	if config.AppHash == "" {
-		return nil, fmt.Errorf("No app_hash")
+	config.TgConfig = *tgConfig
+
+	config.PgConfig = PostgresConfig{}
+	config.PgConfig.DBName = os.Getenv("POSTGRES_DB")
+	if config.PgConfig.DBName == "" {
+		return nil, fmt.Errorf("No POSTGRES_DB")
 	}
-	config.ProxyAddr = os.Getenv("PROXY_ADDR")
-	if config.ProxyAddr == "" {
-		return nil, fmt.Errorf("No proxy addres")
+	config.PgConfig.User = os.Getenv("POSTGRES_USER")
+	if config.PgConfig.User == "" {
+		return nil, fmt.Errorf("No POSTGRES_USER")
 	}
-	proxySecretHex := os.Getenv("PROXY_SECRET")
-	if proxySecretHex == "" {
-		return nil, fmt.Errorf("No proxy secret")
+	config.PgConfig.Password = os.Getenv("POSTGRES_PASSWORD")
+	if config.PgConfig.Password == "" {
+		return nil, fmt.Errorf("No POSTGRES_PASSWORD")
 	}
-	config.ProxySecret, err = hex.DecodeString(proxySecretHex)
-	if err != nil {
-		return nil, fmt.Errorf("hex: %w", err)
-	}
-	config.SessionPath = os.Getenv("SESSION_PATH")
-	if config.SessionPath == "" {
-		return nil, fmt.Errorf("No SESSION_PATH")
-	}
+
 	config.KafkaBroker = os.Getenv("KAFKA_BROKER")
 	if config.KafkaBroker == "" {
 		return nil, fmt.Errorf("No KAFKA_BROKER")
