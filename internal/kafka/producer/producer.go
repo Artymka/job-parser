@@ -11,7 +11,7 @@ type Producer struct {
 	writer *kafka.Writer
 }
 
-func NewProducer(kafkaBroker string) *Producer {
+func NewProducer(kafkaBroker string, topic string) *Producer {
 	// broker := os.Getenv("KAFKA_BROKER")
 	// if broker == "" {
 	// 	panic(fmt.Errorf("no KAFKA_BROKER"))
@@ -19,7 +19,7 @@ func NewProducer(kafkaBroker string) *Producer {
 
 	writer := kafka.Writer{
 		Addr:  kafka.TCP(kafkaBroker),
-		Topic: "messages",
+		Topic: topic,
 		// как балансируются сообщения по партициям
 		Balancer:               &kafka.LeastBytes{},
 		RequiredAcks:           kafka.RequireOne,

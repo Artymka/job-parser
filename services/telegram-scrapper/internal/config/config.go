@@ -19,7 +19,6 @@ type Config struct {
 	TgConfig    tgconf.Config
 	PgConfig    PostgresConfig
 	KafkaBroker string
-	PostgresDB  string
 }
 
 func New(envFileName string) (*Config, error) {

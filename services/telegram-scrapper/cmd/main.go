@@ -67,7 +67,7 @@ func main() {
 	defer storage.Close()
 
 	// kafka
-	kafkaProd := producer.NewProducer(config.KafkaBroker)
+	kafkaProd := producer.NewProducer(config.KafkaBroker, "raw-messages")
 	defer kafkaProd.Close()
 
 	// получение каналов

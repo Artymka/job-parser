@@ -7,7 +7,15 @@ import (
 	"github.com/joho/godotenv"
 )
 
+type PostgresConfig struct {
+	DBName   string
+	User     string
+	Password string
+	SSLMode  string
+}
+
 type Config struct {
+	PgConfig    PostgresConfig
 	KafkaBroker string
 	AIKey       string
 	AIModel     string
@@ -36,6 +44,20 @@ func New(configPath string) (*Config, error) {
 	config.AIEndpoint = os.Getenv("AI_ENDPOINT")
 	if config.AIEndpoint == "" {
 		return nil, fmt.Errorf("No AI_ENDPOINT")
+	}
+
+	config.PgConfig = PostgresConfig{}
+	config.PgConfig.DBName = os.Getenv("POSTGRES_DB")
+	if config.PgConfig.DBName == "" {
+		return nil, fmt.Errorf("No POSTGRES_DB")
+	}
+	config.PgConfig.User = os.Getenv("POSTGRES_USER")
+	if config.PgConfig.User == "" {
+		return nil, fmt.Errorf("No POSTGRES_USER")
+	}
+	config.PgConfig.Password = os.Getenv("POSTGRES_PASSWORD")
+	if config.PgConfig.Password == "" {
+		return nil, fmt.Errorf("No POSTGRES_PASSWORD")
 	}
 
 	return &config, nil

@@ -33,11 +33,19 @@ func ScrapChannel(c *client.Client, channel models.Channel) ([]m.MessageData, er
 		return nil, fmt.Errorf("%s: manager does not work", op)
 	}
 
-	// получаем сообщения из канала
-	rawMessages, err := api.MessagesGetHistory(context.TODO(), &tg.MessagesGetHistoryRequest{
-		Peer:  inputChannelPeer,
-		Limit: 2,
-	})
+	// получаем последние сообщения из канала
+	var rawMessages tg.MessagesMessagesClass
+	if channel.LastMessageID == 0 {
+		rawMessages, err = api.MessagesGetHistory(context.TODO(), &tg.MessagesGetHistoryRequest{
+			Peer:  inputChannelPeer,
+			Limit: 1,
+		})
+	} else {
+		rawMessages, err = api.MessagesGetHistory(context.TODO(), &tg.MessagesGetHistoryRequest{
+			Peer:     inputChannelPeer,
+			OffsetID: channel.LastMessageID + 1,
+		})
+	}
 	if err != nil {
 		return nil, fmt.Errorf("%s: get chat history: %w", op, err)
 	}

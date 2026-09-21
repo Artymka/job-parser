@@ -13,7 +13,7 @@ type Consumer struct {
 	reader *kafka.Reader
 }
 
-func NewConsumer(kafkaBroker string) *Consumer {
+func NewConsumer(kafkaBroker string, topic string) *Consumer {
 	// подключение к kafka
 	// broker := os.Getenv("KAFKA_BROKER")
 	// if broker == "" {
@@ -22,7 +22,7 @@ func NewConsumer(kafkaBroker string) *Consumer {
 
 	reader := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:     []string{kafkaBroker},
-		Topic:       "messages",
+		Topic:       topic,
 		Partition:   0,
 		StartOffset: kafka.FirstOffset,
 	})
@@ -46,6 +46,7 @@ func (c *Consumer) Consume(ctx context.Context) (string, error) {
 	}
 
 	msg, err := c.reader.ReadMessage(ctx)
+	c.reader.
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
 			return "", nil

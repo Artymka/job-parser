@@ -9,8 +9,10 @@ import (
 	"time"
 
 	"github.com/artymka/jobparser/internal/kafka/consumer"
+	"github.com/artymka/jobparser/internal/kafka/producer"
 	"github.com/artymka/jobparser/services/classifier/internal/config"
-	"github.com/artymka/jobparser/services/classifier/internal/openai"
+	"github.com/artymka/jobparser/services/classifier/internal/repository/postgres"
+	"github.com/openai/openai-go/v3"
 )
 
 func main() {
@@ -22,7 +24,24 @@ func main() {
 		panic(err)
 	}
 
-	consumer := consumer.NewConsumer(config.KafkaBroker)
+	storage, err := postgres.NewStorage(config.PgConfig.DBName, config.PgConfig.User, config.PgConfig.Password)
+	if err != nil {
+		panic(err)
+	}
+	defer storage.Close()
+
+	// получение тем и создание продюсеров для каждой темы
+	themes, err := storage.GetThemes()
+	if err != nil {
+		panic(err)
+	}
+	producers := make(map[int]*producer.Producer)
+	for _, theme := range themes {
+		producers[theme.ID] = producer.NewProducer(config.KafkaBroker, fmt.Sprintf("theme_%d", theme.ID))
+		defer producers[theme.ID].Close()
+	}
+
+	consumer := consumer.NewConsumer(config.KafkaBroker, "raw-messages")
 	defer consumer.Close()
 
 	ticker := time.NewTicker(2 * time.Second)
